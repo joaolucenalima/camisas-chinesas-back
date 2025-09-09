@@ -3,20 +3,22 @@ import path from "path";
 import fs from "fs";
 import cors from "cors";
 
-import 'dotenv/config'
+import "dotenv/config";
 
 const PORT = process.env.PORT;
 const networkPath = process.env.NETWORK_PATH;
 
 if (!PORT || !networkPath) {
-	console.error("As variáveis de ambiente PORT e NETWORK_PATH devem estar definidas.");
+	console.error(
+		"As variáveis de ambiente PORT e NETWORK_PATH devem estar definidas."
+	);
 	process.exit(1);
 }
 
 const app = express();
 
 const corsOptions = {
-	origin: "*", 
+	origin: "*",
 	methods: ["GET", "POST", "PUT", "DELETE"],
 	allowedHeaders: ["Content-Type", "Authorization"],
 };
@@ -57,14 +59,39 @@ app.listen(PORT, () => {
 	console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
 
-app.get("/download/:folder/:file", (req, res) => {
-	const { folder, file } = req.params;
-	const filePath = path.join(networkPath, folder, file);
+function findFileRecursive(dir: string, fileName: string): string | null {
+	const files = fs.readdirSync(dir);
+
+	for (const file of files) {
+		const filePath = path.join(dir, file);
+		const stat = fs.statSync(filePath);
+
+		if (stat.isDirectory()) {
+			const found = findFileRecursive(filePath, fileName);
+			if (found) return found;
+		} else if (file === fileName) {
+			return filePath;
+		}
+	}
+
+	return null;
+}
+
+app.get("/download/:image", (req, res) => {
+	const imageName = req.params.image;
+
+	const filePath = findFileRecursive(networkPath, imageName);
+
+	if (!filePath) {
+		return res.status(404).send("Arquivo não encontrado");
+	}
 
 	res.download(filePath, (err) => {
 		if (err) {
 			console.error("Erro ao enviar arquivo:", err);
-			res.status(500).send("Erro ao acessar arquivo");
+			if (!res.headersSent) {
+				res.status(500).send("Erro ao acessar arquivo");
+			}
 		}
 	});
 });
