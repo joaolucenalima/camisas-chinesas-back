@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import cors from "cors";
 
 import 'dotenv/config'
 
@@ -14,6 +15,13 @@ if (!PORT || !networkPath) {
 
 const app = express();
 
+const corsOptions = {
+	origin: "*", 
+	methods: ["GET", "POST", "PUT", "DELETE"],
+	allowedHeaders: ["Content-Type", "Authorization"],
+};
+app.use(cors(corsOptions));
+
 function getDirectoryTree(dirPath: string) {
 	let result: Record<string, any> = {};
 
@@ -25,10 +33,10 @@ function getDirectoryTree(dirPath: string) {
 		if (item.isDirectory()) {
 			result[item.name] = getDirectoryTree(fullPath);
 		} else {
-			if (!result.files) {
-				result.files = [];
+			if (!result.length) {
+				result = [];
 			}
-			result.files.push(item.name);
+			result.push(item.name);
 		}
 	});
 
