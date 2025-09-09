@@ -2,13 +2,14 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import cors from "cors";
+import { prisma } from "./prisma/connection.js";
 
 import "dotenv/config";
 
-const PORT = process.env.PORT;
+const port = process.env.PORT;
 const networkPath = process.env.NETWORK_PATH;
 
-if (!PORT || !networkPath) {
+if (!port || !networkPath) {
 	console.error(
 		"As variáveis de ambiente PORT e NETWORK_PATH devem estar definidas."
 	);
@@ -55,10 +56,6 @@ app.get("/files", (_, res) => {
 	}
 });
 
-app.listen(PORT, () => {
-	console.log(`Servidor rodando em http://localhost:${PORT}`);
-});
-
 function findFileRecursive(dir: string, fileName: string): string | null {
 	const files = fs.readdirSync(dir);
 
@@ -94,4 +91,24 @@ app.get("/download/:image", (req, res) => {
 			}
 		}
 	});
+});
+
+app.post("/shirt", async (req, res) => {
+	const body = req.body;
+
+	const imageURL = "";
+
+	const shirt = await prisma.shirt.create({
+		data: {
+			title: body.title,
+			link: body.link,
+			imageURL,
+		},
+	});
+
+	res.json(shirt);
+});
+
+app.listen(port, () => {
+	console.log(`Servidor rodando em http://localhost:${port}`);
 });
