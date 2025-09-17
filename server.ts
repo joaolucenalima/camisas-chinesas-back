@@ -80,7 +80,6 @@ function getDirectoryTree(dirPath: string): Record<string, any> {
  *       500:
  *         description: Erro ao ler a unidade de rede
  */
-
 app.get("/files", (_, res) => {
 	try {
 		const tree = getDirectoryTree(networkPath);
@@ -192,7 +191,6 @@ function findFileRecursive(dir: string, fileName: string): string | null {
  *               type: string
  *               example: Erro ao acessar arquivo
  */
-
 app.get("/download/:image", (req, res) => {
 	const imageName = req.params.image;
 
@@ -452,51 +450,65 @@ app.delete("/person/:id", async (req, res) => {
  *             type: object
  *             required:
  *               - title
- *               - userId
+ *               - link
+ *               - personId
  *             properties:
  *               title:
  *                 type: string
  *                 example: "Camisa Vermelha"
  *               link:
  *                 type: string
- *                 example: "http://exemplo.com/camisa-vermelha"
- *               userId:
+ *                 example: "juanito_united.jpg"
+ *               priceInCents:
+ *                 type: integer
+ *                 example: 2999
+ *               personId:
  *                 type: integer
  *                 example: 1
  *     responses:
- *       200:
+ *       201:
  *         description: Camisa criada com sucesso
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Shirt'
+ *       404:
+ *         description: Imagem não encontrada no diretório
  *       500:
  *         description: Erro ao criar camisa
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Erro ao criar camisa
  */
 app.post("/shirt", async (req, res) => {
-	const body = req.body;
+	try {
+		const { title, link, priceInCents, personId } = req.body;
 
-	const imageURL = "";
+		if (!title || !link || !personId) {
+			return res.status(400).json({ error: "Campos obrigatórios ausentes" });
+		}
 
-	const shirt = await prisma.shirt.create({
-		data: {
-			title: body.title,
-			link: body.link,
-			imageURL,
-			personId: body.userId,
-		},
-	});
+		// Busca o caminho da imagem na rede
+		const filePath = findFileRecursive(networkPath, link);
+		if (!filePath) {
+			return res.status(404).json({ error: "Imagem não encontrada na rede" });
+		}
 
-	res.json(shirt);
+		const shirt = await prisma.shirt.create({
+			data: {
+				title,
+				link,
+				imageURL: filePath, // ← agora salva o caminho real da imagem
+				priceInCents: priceInCents ?? null,
+				personId: Number(personId),
+			},
+		});
+
+		res.status(201).json(shirt);
+	} catch (error) {
+		console.error("Erro ao criar camisa:", error);
+		res.status(500).json({ error: "Erro ao criar camisa" });
+	}
 });
+
+
 
 /**
  * @swagger
@@ -539,7 +551,7 @@ app.get("/shirt", async (req, res) => {
  * @swagger
  * /shirt/{id}:
  *   put:
- *     summary: Atualiza uma camisa pelo ID
+ *     summary: Atualiza uma camisa pelo ID (sem alterar a pessoa vinculada)
  *     tags:
  *       - Camisa
  *     parameters:
@@ -561,7 +573,10 @@ app.get("/shirt", async (req, res) => {
  *                 example: "Nova camisa"
  *               link:
  *                 type: string
- *                 example: "http://example.com/camisa"
+ *                 example: "juanito_united.jpg"
+ *               priceInCents:
+ *                 type: integer
+ *                 example: 2999
  *     responses:
  *       200:
  *         description: Camisa atualizada com sucesso
@@ -569,6 +584,16 @@ app.get("/shirt", async (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Shirt'
+ *       404:
+ *         description: Imagem não encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Imagem não encontrada na rede
  *       500:
  *         description: Erro ao atualizar camisa
  *         content:
@@ -583,11 +608,25 @@ app.get("/shirt", async (req, res) => {
 app.put("/shirt/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
-		const { title, link } = req.body;
+		const { title, link, priceInCents } = req.body;
+
+		if (!title || !link) {
+			return res.status(400).json({ error: "Campos obrigatórios ausentes" });
+		}
+
+		const filePath = findFileRecursive(networkPath, link);
+		if (!filePath) {
+			return res.status(404).json({ error: "Imagem não encontrada na rede" });
+		}
 
 		const shirt = await prisma.shirt.update({
 			where: { id: Number(id) },
-			data: { title, link },
+			data: {
+				title,
+				link,
+				imageURL: filePath,
+				priceInCents: priceInCents ?? null,
+			},
 		});
 
 		res.json(shirt);
@@ -595,7 +634,8 @@ app.put("/shirt/:id", async (req, res) => {
 		console.error("Erro ao atualizar camisa:", error);
 		res.status(500).json({ error: "Erro ao atualizar camisa" });
 	}
-})
+});
+
 
 /**
  * @swagger
