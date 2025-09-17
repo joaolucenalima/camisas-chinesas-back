@@ -48,6 +48,39 @@ function getDirectoryTree(dirPath: string): Record<string, any> {
 	return result;
 }
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     DirectoryTree:
+ *       type: object
+ *       description: Estrutura recursiva de diretórios e arquivos
+ *       additionalProperties:
+ *         oneOf:
+ *           - $ref: '#/components/schemas/DirectoryTree'  # subdiretórios (objeto)
+ *           - type: array
+ *             items:
+ *               type: string                              # arquivos (lista de nomes)
+ */
+
+/**
+ * @swagger
+ * /files:
+ *   get:
+ *     summary: Retorna a estrutura de diretórios da unidade de rede
+ *     tags:
+ *       - Arquivos
+ *     responses:
+ *       200:
+ *         description: Estrutura de diretórios obtida com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/DirectoryTree'
+ *       500:
+ *         description: Erro ao ler a unidade de rede
+ */
+
 app.get("/files", (_, res) => {
 	try {
 		const tree = getDirectoryTree(networkPath);
@@ -57,6 +90,51 @@ app.get("/files", (_, res) => {
 		res.status(500).send("Erro ao ler a unidade de rede");
 	}
 });
+
+/**
+ * @swagger
+ * /download/{image}:
+ *   get:
+ *     summary: Faz download de uma imagem pelo nome, buscando recursivamente na pasta de rede
+ *     tags:
+ *       - Arquivos
+ *     parameters:
+ *       - in: path
+ *         name: image
+ *         required: true
+ *         description: Nome do arquivo de imagem para download
+ *         schema:
+ *           type: string
+ *           example: foto.png
+ *     responses:
+ *       200:
+ *         description: Arquivo encontrado e enviado para download
+ *         content:
+ *           application/octet-stream:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Arquivo não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Arquivo não encontrado
+ *       500:
+ *         description: Erro interno ao acessar arquivo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Erro ao acessar arquivo
+ */
 
 function findFileRecursive(dir: string, fileName: string): string | null {
 	const files = fs.readdirSync(dir);
@@ -75,6 +153,45 @@ function findFileRecursive(dir: string, fileName: string): string | null {
 
 	return null;
 }
+
+/**
+ * @swagger
+ * /download/{image}:
+ *   get:
+ *     summary: Faz o download de uma imagem pelo nome
+ *     tags:
+ *       - Download
+ *     parameters:
+ *       - in: path
+ *         name: image
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nome do arquivo de imagem a ser baixado
+ *         example: "foto.png"
+ *     responses:
+ *       200:
+ *         description: Download iniciado com sucesso
+ *         content:
+ *           application/octet-stream:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Arquivo não encontrado
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: Arquivo não encontrado
+ *       500:
+ *         description: Erro ao acessar arquivo
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: Erro ao acessar arquivo
+ */
 
 app.get("/download/:image", (req, res) => {
 	const imageName = req.params.image;
