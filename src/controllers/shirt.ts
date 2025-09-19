@@ -1,7 +1,52 @@
 import { Router } from "express";
-import { prisma } from "../prisma/connection.js";
+import { prisma } from "../../prisma/connection.js";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
 
 const ShirtController = Router();
+
+const uploadDir = path.resolve(process.cwd(), "./assets");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+	destination: () => uploadDir,
+	filename: (_req, file, cb) => {
+		const unique = crypto.randomUUID();
+		cb(null, `${unique}-${file.originalname}`);
+	},
+});
+const upload = multer({ storage });
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Shirt:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID único da camisa
+ *         title:
+ *           type: string
+ *           description: Título da camisa
+ *         link:
+ *           type: string
+ *           description: Link externo para a camisa
+ *           nullable: true
+ *         imageURL:
+ *           type: string
+ *           description: Caminho para a imagem da camisa
+ *         priceInCents:
+ *           type: integer
+ *           description: Preço da camisa em centavos
+ *           nullable: true
+ *         personId:
+ *           type: integer
+ *           description: ID da pessoa associada à camisa
+ */
 
 /**
  * @swagger
@@ -10,29 +55,35 @@ const ShirtController = Router();
  *     summary: Cria uma nova camisa
  *     tags:
  *       - Camisa
+ *     consumes:
+ *       - multipart/form-data
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
  *               - title
- *               - link
  *               - personId
+ *               - image
  *             properties:
  *               title:
  *                 type: string
- *                 example: "Camisa Vermelha"
+ *                 example: "Brasil 2025 Home"
  *               link:
  *                 type: string
- *                 example: "juanito_united.jpg"
+ *                 example: "https://lojadecamisas.com"
  *               priceInCents:
  *                 type: integer
  *                 example: 2999
  *               personId:
  *                 type: integer
  *                 example: 1
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Imagem da camisa
  *     responses:
  *       201:
  *         description: Camisa criada com sucesso
@@ -40,30 +91,37 @@ const ShirtController = Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Shirt'
- *       404:
- *         description: Imagem não encontrada no diretório
- *       500:
- *         description: Erro ao criar camisa
+ *       400:
+ *         description: Campos obrigatórios ausentes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Campos obrigatórios ausentes
  */
-ShirtController.post("/", async (req, res) => {
+ShirtController.post("/", upload.single("image"), async (req, res) => {
 	try {
 		const { title, link, priceInCents, personId } = req.body;
 
-		if (!title || !link || !personId) {
+		if (!title || !personId) {
 			return res.status(400).json({ error: "Campos obrigatórios ausentes" });
 		}
 
-		const filePath = findFileRecursive(networkPath, link);
-		if (!filePath) {
-			return res.status(404).json({ error: "Imagem não encontrada na rede" });
+		if (!req.file) {
+			return res.status(404).json({ error: "Imagem não enviada" });
 		}
+
+		const imageURL = req.file.path;
 
 		const shirt = await prisma.shirt.create({
 			data: {
 				title,
-				link,
-				imageURL: filePath,
-				priceInCents: priceInCents ?? null,
+				link: link ?? null,
+				imageURL,
+				priceInCents: priceInCents ? Number(priceInCents) : null,
 				personId: Number(personId),
 			},
 		});
@@ -116,7 +174,7 @@ ShirtController.get("/", async (req, res) => {
  * @swagger
  * /shirt/{id}:
  *   put:
- *     summary: Atualiza uma camisa pelo ID (sem alterar a pessoa vinculada)
+ *     summary: Atualiza uma camisa pelo ID
  *     tags:
  *       - Camisa
  *     parameters:
@@ -126,22 +184,30 @@ ShirtController.get("/", async (req, res) => {
  *         schema:
  *           type: integer
  *         description: ID da camisa a ser atualizada
+ *     consumes:
+ *       - multipart/form-data
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
+ *             required:
+ *               - title
  *             properties:
  *               title:
  *                 type: string
  *                 example: "Nova camisa"
  *               link:
  *                 type: string
- *                 example: "juanito_united.jpg"
+ *                 example: "https://lojadecamisas.com"
  *               priceInCents:
  *                 type: integer
  *                 example: 2999
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Nova imagem da camisa (opcional)
  *     responses:
  *       200:
  *         description: Camisa atualizada com sucesso
@@ -149,16 +215,8 @@ ShirtController.get("/", async (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Shirt'
- *       404:
- *         description: Imagem não encontrada
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Imagem não encontrada na rede
+ *       400:
+ *         description: Campos obrigatórios ausentes
  *       500:
  *         description: Erro ao atualizar camisa
  *         content:
@@ -170,28 +228,47 @@ ShirtController.get("/", async (req, res) => {
  *                   type: string
  *                   example: Erro ao atualizar camisa
  */
-ShirtController.put("/:id", async (req, res) => {
+ShirtController.put("/:id", upload.single("image"), async (req, res) => {
 	try {
 		const { id } = req.params;
-		const { title, link, priceInCents } = req.body;
+		const data = req.body;
 
-		if (!title || !link) {
+		if (!data.title || !id) {
 			return res.status(400).json({ error: "Campos obrigatórios ausentes" });
 		}
 
-		const filePath = findFileRecursive(networkPath, link);
-		if (!filePath) {
-			return res.status(404).json({ error: "Imagem não encontrada na rede" });
+		const imageURL = req.file?.path;
+
+		if (imageURL) {
+			const actualShirt = await prisma.shirt.findUnique({
+				where: {
+					id: Number(id),
+				},
+			});
+
+			if (actualShirt?.imageURL === imageURL) return;
+
+			data.imageURL = imageURL;
+
+			const previousImagePath = actualShirt?.imageURL;
+			if (previousImagePath) {
+				try {
+					const resolvedPrev = path.resolve(previousImagePath);
+					if (
+						resolvedPrev.startsWith(uploadDir) &&
+						fs.existsSync(resolvedPrev)
+					) {
+						fs.unlinkSync(resolvedPrev);
+					}
+				} catch (err) {
+					console.error("Erro ao deletar imagem anterior:", err);
+				}
+			}
 		}
 
 		const shirt = await prisma.shirt.update({
 			where: { id: Number(id) },
-			data: {
-				title,
-				link,
-				imageURL: filePath,
-				priceInCents: priceInCents ?? null,
-			},
+			data,
 		});
 
 		res.json(shirt);
@@ -222,6 +299,8 @@ ShirtController.put("/:id", async (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Shirt'
+ *       404:
+ *         description: Camisa não encontrada
  *       500:
  *         description: Erro ao deletar camisa
  *         content:
@@ -240,6 +319,23 @@ ShirtController.delete("/:id", async (req, res) => {
 		const shirt = await prisma.shirt.delete({
 			where: { id: Number(id) },
 		});
+
+		if (shirt.imageURL) {
+			const previousImagePath = shirt.imageURL;
+			if (previousImagePath) {
+				try {
+					const resolvedPrev = path.resolve(previousImagePath);
+					if (
+						resolvedPrev.startsWith(uploadDir) &&
+						fs.existsSync(resolvedPrev)
+					) {
+						fs.unlinkSync(resolvedPrev);
+					}
+				} catch (err) {
+					console.error("Erro ao deletar imagem anterior:", err);
+				}
+			}
+		}
 
 		res.json(shirt);
 	} catch (error) {

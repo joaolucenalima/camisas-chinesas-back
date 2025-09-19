@@ -1,4 +1,4 @@
-import { prisma } from "../prisma/connection.js";
+import { prisma } from "../../prisma/connection.js";
 import { Router } from "express";
 
 const PersonController = Router();
