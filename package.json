@@ -3,12 +3,12 @@
 	"description": "",
 	"version": "1.0.0",
 	"keywords": [],
-	"main": "server.js",
+	"main": "src/server.js",
 	"type": "module",
 	"scripts": {
-		"dev": "tsx --watch server.ts",
+		"dev": "tsx --watch src/server.ts",
 		"build": "tsc",
-		"start": "node dist/server.js"
+		"start": "node dist/src/server.js"
 	},
 	"author": "",
 	"license": "ISC",

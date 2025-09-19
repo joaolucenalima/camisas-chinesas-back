@@ -21,6 +21,7 @@ model Shirt {
   imageURL     String
   priceInCents Int?
   enabled      Boolean @default(true)
+  status       Int     @default(1)
   person       Person  @relation(fields: [personId], references: [id])
   personId     Int
 }
