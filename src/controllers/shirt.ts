@@ -1,9 +1,9 @@
-import { Router } from "express";
-import { prisma } from "../../prisma/connection.js";
-import multer from "multer";
-import fs from "fs";
-import path from "path";
 import crypto from "crypto";
+import { Router } from "express";
+import fs from "fs";
+import multer from "multer";
+import path from "path";
+import { prisma } from "../../prisma/connection.js";
 
 const ShirtController = Router();
 
@@ -44,7 +44,7 @@ const upload = multer({ storage });
  *           description: Preço da camisa em centavos
  *           nullable: true
  *         personId:
- *           type: integer
+ *           type: string
  *           description: ID da pessoa associada à camisa
  */
 
@@ -122,7 +122,7 @@ ShirtController.post("/", upload.single("image"), async (req, res) => {
 				link: link ?? null,
 				imageURL,
 				priceInCents: priceInCents ? Number(priceInCents) : null,
-				personId: Number(personId),
+				personId,
 			},
 		});
 
@@ -209,13 +209,13 @@ ShirtController.get("/", async (req, res) => {
 	try {
 		const personId = req.query.person;
 
-		if (!personId || isNaN(Number(personId))) {
+		if (!personId) {
 			return res.status(400).json({ error: "ID da pessoa é obrigatório" });
 		}
 
 		const shirts = await prisma.shirt.findMany({
 			where: {
-				personId: Number(personId)
+				personId: personId.toString()
 			}
 		});
 		res.json(shirts);

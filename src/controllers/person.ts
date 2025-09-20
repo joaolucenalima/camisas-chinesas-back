@@ -1,7 +1,22 @@
-import { prisma } from "../../prisma/connection.js";
 import { Router } from "express";
+import { prisma } from "../../prisma/connection.js";
 
 const PersonController = Router();
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Person:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: ID único da pessoa
+ *         name:
+ *           type: string
+ *           description: Nome da pessoa
+ */
 
 /**
  * @swagger
@@ -33,18 +48,18 @@ const PersonController = Router();
  *         description: Erro ao criar pessoa
  */
 PersonController.post("/", async (req, res) => {
-	try {
-		const { name } = req.body;
+  try {
+    const { name } = req.body;
 
-		const person = await prisma.person.create({
-			data: { name },
-		});
+    const person = await prisma.person.create({
+      data: { name },
+    });
 
-		res.status(201).json(person);
-	} catch (error) {
-		console.error("Erro ao criar pessoa:", error);
-		res.status(500).json({ error: "Erro ao criar pessoa" });
-	}
+    res.status(201).json(person);
+  } catch (error) {
+    console.error("Erro ao criar pessoa:", error);
+    res.status(500).json({ error: "Erro ao criar pessoa" });
+  }
 });
 
 /**
@@ -75,13 +90,13 @@ PersonController.post("/", async (req, res) => {
  *                   example: Erro ao buscar pessoas
  */
 PersonController.get("/", async (req, res) => {
-	try {
-		const people = await prisma.person.findMany();
-		res.json(people);
-	} catch (error) {
-		console.error("Erro ao buscar pessoas:", error);
-		res.status(500).json({ error: "Erro ao buscar pessoas" });
-	}
+  try {
+    const people = await prisma.person.findMany();
+    res.json(people);
+  } catch (error) {
+    console.error("Erro ao buscar pessoas:", error);
+    res.status(500).json({ error: "Erro ao buscar pessoas" });
+  }
 });
 
 /**
@@ -128,20 +143,20 @@ PersonController.get("/", async (req, res) => {
  *                   example: Erro ao atualizar pessoa
  */
 PersonController.put("/:id", async (req, res) => {
-	try {
-		const { id } = req.params;
-		const { name } = req.body;
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
 
-		const person = await prisma.person.update({
-			where: { id: Number(id) },
-			data: { name },
-		});
+    const person = await prisma.person.update({
+      where: { id },
+      data: { name },
+    });
 
-		res.json(person);
-	} catch (error) {
-		console.error("Erro ao atualizar pessoa:", error);
-		res.status(500).json({ error: "Erro ao atualizar pessoa" });
-	}
+    res.json(person);
+  } catch (error) {
+    console.error("Erro ao atualizar pessoa:", error);
+    res.status(500).json({ error: "Erro ao atualizar pessoa" });
+  }
 });
 
 /**
@@ -177,18 +192,18 @@ PersonController.put("/:id", async (req, res) => {
  *                   example: Erro ao deletar pessoa
  */
 PersonController.delete("/:id", async (req, res) => {
-	try {
-		const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-		const person = await prisma.person.delete({
-			where: { id: Number(id) },
-		});
+    const person = await prisma.person.delete({
+      where: { id },
+    });
 
-		res.json(person);
-	} catch (error) {
-		console.error("Erro ao deletar pessoa:", error);
-		res.status(500).json({ error: "Erro ao deletar pessoa" });
-	}
+    res.json(person);
+  } catch (error) {
+    console.error("Erro ao deletar pessoa:", error);
+    res.status(500).json({ error: "Erro ao deletar pessoa" });
+  }
 });
 
 export default PersonController;

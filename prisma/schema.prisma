@@ -9,7 +9,7 @@ datasource db {
 }
 
 model Person {
-  id    Int     @id @default(autoincrement())
+  id    String     @id @default(uuid())
   name  String?
   shirt Shirt[]
 }
@@ -23,5 +23,5 @@ model Shirt {
   enabled      Boolean @default(true)
   status       Int     @default(1)
   person       Person  @relation(fields: [personId], references: [id])
-  personId     Int
+  personId     String
 }
