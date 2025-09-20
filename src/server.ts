@@ -11,10 +11,11 @@ import "dotenv/config";
 
 const port = process.env.PORT;
 const networkPath = process.env.NETWORK_PATH;
+const databaseUrl = process.env.DATABASE_URL;
 
-if (!port || !networkPath) {
+if (!port || !networkPath || !databaseUrl) {
 	console.error(
-		"As variáveis de ambiente PORT e NETWORK_PATH devem estar definidas."
+		"As variáveis de ambiente PORT, NETWORK_PATH e DATABASE_URL devem estar definidas."
 	);
 	process.exit(1);
 }
@@ -31,44 +32,6 @@ app.use(cors(corsOptions));
 
 app.use("/person", PersonController);
 app.use("/shirt", ShirtController);
-
-// function getDirectoryTree(dirPath: string): Record<string, any> {
-// 	const result: Record<string, any> = {};
-// 	const items = fs.readdirSync(dirPath, { withFileTypes: true });
-
-// 	items.forEach((item) => {
-// 		const fullPath = path.join(dirPath, item.name);
-
-// 		if (item.isDirectory()) {
-// 			result[item.name] = getDirectoryTree(fullPath);
-// 		} else {
-// 			if (!result.files) {
-// 				result.files = [];
-// 			}
-// 			result.files.push(item.name);
-// 		}
-// 	});
-
-// 	return result;
-// }
-
-function findFileRecursive(dir: string, fileName: string): string | null {
-	const files = fs.readdirSync(dir);
-
-	for (const file of files) {
-		const filePath = path.join(dir, file);
-		const stat = fs.statSync(filePath);
-
-		if (stat.isDirectory()) {
-			const found = findFileRecursive(filePath, fileName);
-			if (found) return found;
-		} else if (file === fileName) {
-			return filePath;
-		}
-	}
-
-	return null;
-}
 
 /**
  * @swagger
@@ -109,11 +72,11 @@ function findFileRecursive(dir: string, fileName: string): string | null {
  *               example: Erro ao acessar arquivo
  */
 app.get("/download/:image", (req, res) => {
-	const imageName = req.params.image;
+	const imageUrl = req.params.image;
 
-	const filePath = findFileRecursive(networkPath, imageName);
+	const filePath = path.join(networkPath, imageUrl);
 
-	if (!filePath) {
+	if (!fs.existsSync(filePath)) {
 		return res.status(404).send("Arquivo não encontrado");
 	}
 
