@@ -172,6 +172,61 @@ ShirtController.get("/", async (req, res) => {
 
 /**
  * @swagger
+ * /shirt:
+ *   get:
+ *     summary: Busca as camisas de uma pessoa
+ *     tags:
+ *       - Camisa
+ *     parameters:
+ *       - in: query
+ *         name: person
+ *         schema:
+ *           type: integer
+ *         description: ID da pessoa para filtrar camisas
+ *     responses:
+ *       200:
+ *         description: Lista de camisas retornada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Shirt'
+ *       400:
+ *         description: ID da pessoa é obrigatório
+ *       500:
+ *         description: Erro ao buscar camisas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Erro ao buscar camisas
+ */
+ShirtController.get("/", async (req, res) => {
+	try {
+		const personId = req.query.person;
+
+		if (!personId || isNaN(Number(personId))) {
+			return res.status(400).json({ error: "ID da pessoa é obrigatório" });
+		}
+
+		const shirts = await prisma.shirt.findMany({
+			where: {
+				personId: Number(personId)
+			}
+		});
+		res.json(shirts);
+	} catch (error) {
+		console.error("Erro ao buscar camisas:", error);
+		res.status(500).json({ error: "Erro ao buscar camisas" });
+	}
+});
+
+/**
+ * @swagger
  * /shirt/{id}:
  *   put:
  *     summary: Atualiza uma camisa pelo ID
