@@ -1,9 +1,9 @@
+import cors from "cors";
+import express from "express";
+import fs from "fs";
+import path from "path";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
-import express from "express";
-import path from "path";
-import fs from "fs";
-import cors from "cors";
 import PersonController from "./controllers/person.js";
 import ShirtController from "./controllers/shirt.js";
 

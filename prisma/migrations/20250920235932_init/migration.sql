@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "Person" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT
 );
 
@@ -9,10 +9,10 @@ CREATE TABLE "Shirt" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "title" TEXT NOT NULL,
     "link" TEXT,
-    "imageURL" TEXT NOT NULL,
+    "imageURL" TEXT,
     "priceInCents" INTEGER,
-    "enabled" BOOLEAN NOT NULL DEFAULT true,
+    "size" TEXT,
     "status" INTEGER NOT NULL DEFAULT 1,
-    "personId" INTEGER NOT NULL,
+    "personId" TEXT NOT NULL,
     CONSTRAINT "Shirt_personId_fkey" FOREIGN KEY ("personId") REFERENCES "Person" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );

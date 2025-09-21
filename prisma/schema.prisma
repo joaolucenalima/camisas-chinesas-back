@@ -18,9 +18,9 @@ model Shirt {
   id           Int     @id @default(autoincrement())
   title        String
   link         String?
-  imageURL     String
+  imageURL     String?
   priceInCents Int?
-  enabled      Boolean @default(true)
+  size         String?
   status       Int     @default(1)
   person       Person  @relation(fields: [personId], references: [id])
   personId     String

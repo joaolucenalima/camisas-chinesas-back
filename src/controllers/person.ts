@@ -111,7 +111,7 @@ PersonController.get("/", async (req, res) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *         description: ID da pessoa a ser atualizada
  *     requestBody:
  *       description: Dados para atualizar a pessoa
@@ -171,7 +171,7 @@ PersonController.put("/:id", async (req, res) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *         description: ID da pessoa a ser deletada
  *     responses:
  *       200:
