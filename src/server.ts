@@ -35,9 +35,10 @@ app.use("/shirt", ShirtController);
 
 /**
  * @swagger
- * /download/{image}:
+ * /getImage/{image}:
  *   get:
- *     summary: Faz o download de uma imagem pelo nome
+ *     summary: Retorna uma imagem pelo nome do arquivo
+ *     description: Retorna o arquivo de imagem solicitado do caminho de armazenamento na rede.
  *     tags:
  *       - Download
  *     parameters:
@@ -46,45 +47,59 @@ app.use("/shirt", ShirtController);
  *         required: true
  *         schema:
  *           type: string
- *         description: Nome do arquivo de imagem a ser baixado
- *         example: "foto.png"
+ *           pattern: '^[^\\/]+$'
+ *         example: foto.png
  *     responses:
  *       200:
- *         description: Download iniciado com sucesso
+ *         description: Arquivo de imagem retornado com sucesso
  *         content:
+ *           image/png:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           image/jpeg:
+ *             schema:
+ *               type: string
+ *               format: binary
  *           application/octet-stream:
  *             schema:
  *               type: string
  *               format: binary
  *       404:
- *         description: Arquivo não encontrado
+ *         description: Arquivo de imagem não encontrado
  *         content:
- *           text/plain:
+ *           application/json:
  *             schema:
- *               type: string
- *               example: Arquivo não encontrado
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Arquivo não encontrado
  *       500:
- *         description: Erro ao acessar arquivo
+ *         description: Erro ao acessar o arquivo
  *         content:
- *           text/plain:
+ *           application/json:
  *             schema:
- *               type: string
- *               example: Erro ao acessar arquivo
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Erro ao acessar arquivo
  */
-app.get("/download/:image", (req, res) => {
+app.get("/getImage/:image", (req, res) => {
 	const imageUrl = req.params.image;
 
-	const filePath = path.join(networkPath, imageUrl);
+	const filePath = path.join(process.cwd(), networkPath, imageUrl);
 
 	if (!fs.existsSync(filePath)) {
-		return res.status(404).send("Arquivo não encontrado");
+		return res.status(404).json({ message: "Arquivo não encontrado" });
 	}
 
-	res.download(filePath, (err) => {
+	res.sendFile(filePath, (err) => {
 		if (err) {
 			console.error("Erro ao enviar arquivo:", err);
 			if (!res.headersSent) {
-				res.status(500).send("Erro ao acessar arquivo");
+				res.status(500).json({ message: "Erro ao acessar arquivo" });
 			}
 		}
 	});
@@ -104,7 +119,7 @@ const swaggerOptions = {
 			},
 		],
 	},
-	apis: ["./server.ts", "./src/controllers/*.ts"],
+	apis: ["./src/server.ts", "./src/controllers/*.ts"],
 };
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
