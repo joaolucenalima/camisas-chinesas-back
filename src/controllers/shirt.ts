@@ -230,23 +230,23 @@ ShirtController.get("/", async (req, res) => {
  *                   example: Erro ao buscar camisa
  */
 ShirtController.get("/:id", async (req, res) => {
-  try {
-    const shirtId = Number(req.params.id);
+	try {
+		const shirtId = Number(req.params.id);
 
-    if (!shirtId || isNaN(shirtId)) {
-      res.status(400).json({ error: "ID fornecido inválido" });
-    }
+		if (!shirtId || isNaN(shirtId)) {
+			res.status(400).json({ error: "ID fornecido inválido" });
+		}
 
-    const shirt = await prisma.shirt.findUnique({
-      where: {
-        id: shirtId,
-      },
-    });
-    res.json(shirt);
-  } catch (error) {
-    console.error("Erro ao buscar camisas:", error);
-    res.status(500).json({ error: "Erro ao buscar camisas" });
-  }
+		const shirt = await prisma.shirt.findUnique({
+			where: {
+				id: shirtId,
+			},
+		});
+		res.json(shirt);
+	} catch (error) {
+		console.error("Erro ao buscar camisas:", error);
+		res.status(500).json({ error: "Erro ao buscar camisas" });
+	}
 });
 
 /**
@@ -409,6 +409,14 @@ ShirtController.put("/:id", upload.single("image"), async (req, res) => {
 				} catch (err) {
 					console.error("Erro ao deletar imagem anterior:", err);
 				}
+			}
+		}
+
+		if (data.priceInCents) {
+			if (isNaN(Number(data.priceInCents))) {
+				delete data.priceInCents;
+			} else {
+				data.priceInCents = Number(data.priceInCents);
 			}
 		}
 
