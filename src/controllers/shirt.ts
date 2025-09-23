@@ -65,6 +65,9 @@ const upload = multer({
  *         personId:
  *           type: string
  *           description: ID da pessoa associada à camisa
+ *         status:
+ *           type: number
+ *           description: Status da escolha da camisa
  */
 
 /**
@@ -335,8 +338,6 @@ ShirtController.get("/by-person/:personId", async (req, res) => {
  *         multipart/form-data:
  *           schema:
  *             type: object
- *             required:
- *               - title
  *             properties:
  *               title:
  *                 type: string
@@ -354,6 +355,9 @@ ShirtController.get("/by-person/:personId", async (req, res) => {
  *               size:
  *                 type: string
  *                 description: Tamanho da camisa
+ *               status:
+ *                 type: number
+ *                 description: Status da escolha da camisa
  *     responses:
  *       200:
  *         description: Camisa atualizada com sucesso
@@ -379,8 +383,8 @@ ShirtController.put("/:id", upload.single("image"), async (req, res) => {
 		const { id } = req.params;
 		const data = req.body;
 
-		if (!data.title || !id) {
-			return res.status(400).json({ error: "Campos obrigatórios ausentes" });
+		if (!id) {
+			return res.status(400).json({ error: "ID não fornecido" });
 		}
 
 		const imageURL = req.file?.path;
@@ -412,7 +416,7 @@ ShirtController.put("/:id", upload.single("image"), async (req, res) => {
 			}
 		}
 
-		if (data.priceInCents) {
+		if (data?.priceInCents) {
 			if (isNaN(Number(data.priceInCents))) {
 				delete data.priceInCents;
 			} else {
