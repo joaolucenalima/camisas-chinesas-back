@@ -7,31 +7,38 @@ import { prisma } from "../../prisma/connection.js";
 
 const ShirtController = Router();
 
-const uploadDir = path.resolve(process.cwd(), "./assets");
+const networkPath = process.env.NETWORK_PATH;
+
+if (!networkPath) {
+  console.error("Variável de ambiente NETWORK_PATH não encontrada");
+  process.exit(1);
+}
+
+const uploadDir = path.resolve(networkPath);
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
-	destination: (_req, _file, cb) => {
-		cb(null, "assets");
-	},
-	filename: (_req, file, cb) => {
-		const unique = crypto.randomUUID();
-		cb(null, `${unique}${extname(file.originalname)}`);
-	},
+  destination: (_req, _file, cb) => {
+    cb(null, networkPath);
+  },
+  filename: (_req, file, cb) => {
+    const unique = crypto.randomUUID();
+    cb(null, `${unique}${extname(file.originalname)}`);
+  },
 });
 
 const upload = multer({
-	storage: storage,
-	fileFilter: (req, file, cb) => {
-		const mimeTypeRegex = /^(image)\/[a-zA-Z]+/;
-		const isValidFileFormat = mimeTypeRegex.test(file.mimetype);
-		if (isValidFileFormat) {
-			cb(null, true);
-		} else {
-			cb(null, false);
-			return cb(new Error("Formato do arquivo inválido."));
-		}
-	},
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    const mimeTypeRegex = /^(image)\/[a-zA-Z]+/;
+    const isValidFileFormat = mimeTypeRegex.test(file.mimetype);
+    if (isValidFileFormat) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+      return cb(new Error("Formato do arquivo inválido."));
+    }
+  },
 });
 
 /**
@@ -126,29 +133,29 @@ const upload = multer({
  *                   example: Campos obrigatórios ausentes
  */
 ShirtController.post("/", upload.single("image"), async (req, res) => {
-	try {
-		const { title, link, priceInCents, personId, size } = req.body;
+  try {
+    const { title, link, priceInCents, personId, size } = req.body;
 
-		if (!title || !personId) {
-			return res.status(400).json({ error: "Campos obrigatórios ausentes" });
-		}
+    if (!title || !personId) {
+      return res.status(400).json({ error: "Campos obrigatórios ausentes" });
+    }
 
-		const shirt = await prisma.shirt.create({
-			data: {
-				title,
-				link: link ?? null,
-				imageURL: req.file?.filename ?? null,
-				priceInCents: priceInCents ? Number(priceInCents) : null,
-				personId,
-				size,
-			},
-		});
+    const shirt = await prisma.shirt.create({
+      data: {
+        title,
+        link: link ?? null,
+        imageURL: req.file?.filename ?? null,
+        priceInCents: priceInCents ? Number(priceInCents) : null,
+        personId,
+        size,
+      },
+    });
 
-		return res.status(201).json(shirt);
-	} catch (error) {
-		console.error("Erro ao criar camisa:", error);
-		return res.status(500).json({ error: "Erro ao criar camisa" });
-	}
+    return res.status(201).json(shirt);
+  } catch (error) {
+    console.error("Erro ao criar camisa:", error);
+    return res.status(500).json({ error: "Erro ao criar camisa" });
+  }
 });
 
 /**
@@ -179,13 +186,13 @@ ShirtController.post("/", upload.single("image"), async (req, res) => {
  *                   example: Erro ao buscar camisas
  */
 ShirtController.get("/", async (req, res) => {
-	try {
-		const shirts = await prisma.shirt.findMany();
-		res.json(shirts);
-	} catch (error) {
-		console.error("Erro ao buscar camisas:", error);
-		res.status(500).json({ error: "Erro ao buscar camisas" });
-	}
+  try {
+    const shirts = await prisma.shirt.findMany();
+    res.json(shirts);
+  } catch (error) {
+    console.error("Erro ao buscar camisas:", error);
+    res.status(500).json({ error: "Erro ao buscar camisas" });
+  }
 });
 
 /**
@@ -233,23 +240,23 @@ ShirtController.get("/", async (req, res) => {
  *                   example: Erro ao buscar camisa
  */
 ShirtController.get("/:id", async (req, res) => {
-	try {
-		const shirtId = Number(req.params.id);
+  try {
+    const shirtId = Number(req.params.id);
 
-		if (!shirtId || isNaN(shirtId)) {
-			res.status(400).json({ error: "ID fornecido inválido" });
-		}
+    if (!shirtId || isNaN(shirtId)) {
+      res.status(400).json({ error: "ID fornecido inválido" });
+    }
 
-		const shirt = await prisma.shirt.findUnique({
-			where: {
-				id: shirtId,
-			},
-		});
-		res.json(shirt);
-	} catch (error) {
-		console.error("Erro ao buscar camisas:", error);
-		res.status(500).json({ error: "Erro ao buscar camisas" });
-	}
+    const shirt = await prisma.shirt.findUnique({
+      where: {
+        id: shirtId,
+      },
+    });
+    res.json(shirt);
+  } catch (error) {
+    console.error("Erro ao buscar camisas:", error);
+    res.status(500).json({ error: "Erro ao buscar camisas" });
+  }
 });
 
 /**
@@ -297,23 +304,23 @@ ShirtController.get("/:id", async (req, res) => {
  *                   example: Erro ao buscar camisas
  */
 ShirtController.get("/by-person/:personId", async (req, res) => {
-	try {
-		const personId = req.params.personId;
+  try {
+    const personId = req.params.personId;
 
-		if (!personId) {
-			return res.status(400).json({ error: "ID da pessoa é obrigatório" });
-		}
+    if (!personId) {
+      return res.status(400).json({ error: "ID da pessoa é obrigatório" });
+    }
 
-		const shirts = await prisma.shirt.findMany({
-			where: {
-				personId: personId.toString(),
-			},
-		});
-		res.json(shirts);
-	} catch (error) {
-		console.error("Erro ao buscar camisas:", error);
-		res.status(500).json({ error: "Erro ao buscar camisas" });
-	}
+    const shirts = await prisma.shirt.findMany({
+      where: {
+        personId: personId.toString(),
+      },
+    });
+    res.json(shirts);
+  } catch (error) {
+    console.error("Erro ao buscar camisas:", error);
+    res.status(500).json({ error: "Erro ao buscar camisas" });
+  }
 });
 
 /**
@@ -379,61 +386,58 @@ ShirtController.get("/by-person/:personId", async (req, res) => {
  *                   example: Erro ao atualizar camisa
  */
 ShirtController.put("/:id", upload.single("image"), async (req, res) => {
-	try {
-		const { id } = req.params;
-		const data = req.body;
+  try {
+    const { id } = req.params;
+    const data = req.body;
 
-		if (!id) {
-			return res.status(400).json({ error: "ID não fornecido" });
-		}
+    if (!id) {
+      return res.status(400).json({ error: "ID não fornecido" });
+    }
 
-		const imageURL = req.file?.path;
+    const imageURL = req.file?.filename;
 
-		if (imageURL) {
-			const actualShirt = await prisma.shirt.findUnique({
-				where: {
-					id: Number(id),
-				},
-			});
+    if (imageURL) {
+      const actualShirt = await prisma.shirt.findUnique({
+        where: {
+          id: Number(id),
+        },
+      });
 
-			if (actualShirt?.imageURL === imageURL) return;
+      if (actualShirt?.imageURL === imageURL) return;
 
-			data.imageURL = imageURL;
+      data.imageURL = imageURL;
 
-			const previousImagePath = actualShirt?.imageURL;
-			if (previousImagePath) {
-				try {
-					const resolvedPrev = path.resolve(previousImagePath);
-					if (
-						resolvedPrev.startsWith(uploadDir) &&
-						fs.existsSync(resolvedPrev)
-					) {
-						fs.unlinkSync(resolvedPrev);
-					}
-				} catch (err) {
-					console.error("Erro ao deletar imagem anterior:", err);
-				}
-			}
-		}
+      const previousImagePath = actualShirt?.imageURL;
+      if (previousImagePath) {
+        try {
+          const resolvedPrev = path.resolve(previousImagePath);
+          if (resolvedPrev.startsWith(uploadDir) && fs.existsSync(resolvedPrev)) {
+            fs.unlinkSync(resolvedPrev);
+          }
+        } catch (err) {
+          console.error("Erro ao deletar imagem anterior:", err);
+        }
+      }
+    }
 
-		if (data?.priceInCents) {
-			if (isNaN(Number(data.priceInCents))) {
-				delete data.priceInCents;
-			} else {
-				data.priceInCents = Number(data.priceInCents);
-			}
-		}
+    if (data?.priceInCents) {
+      if (isNaN(Number(data.priceInCents))) {
+        delete data.priceInCents;
+      } else {
+        data.priceInCents = Number(data.priceInCents);
+      }
+    }
 
-		const shirt = await prisma.shirt.update({
-			where: { id: Number(id) },
-			data,
-		});
+    const shirt = await prisma.shirt.update({
+      where: { id: Number(id) },
+      data,
+    });
 
-		res.json(shirt);
-	} catch (error) {
-		console.error("Erro ao atualizar camisa:", error);
-		res.status(500).json({ error: "Erro ao atualizar camisa" });
-	}
+    res.json(shirt);
+  } catch (error) {
+    console.error("Erro ao atualizar camisa:", error);
+    res.status(500).json({ error: "Erro ao atualizar camisa" });
+  }
 });
 
 /**
@@ -471,35 +475,32 @@ ShirtController.put("/:id", upload.single("image"), async (req, res) => {
  *                   example: Erro ao deletar camisa
  */
 ShirtController.delete("/:id", async (req, res) => {
-	try {
-		const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-		const shirt = await prisma.shirt.delete({
-			where: { id: Number(id) },
-		});
+    const shirt = await prisma.shirt.delete({
+      where: { id: Number(id) },
+    });
 
-		if (shirt.imageURL) {
-			const previousImagePath = shirt.imageURL;
-			if (previousImagePath) {
-				try {
-					const resolvedPrev = path.resolve(previousImagePath);
-					if (
-						resolvedPrev.startsWith(uploadDir) &&
-						fs.existsSync(resolvedPrev)
-					) {
-						fs.unlinkSync(resolvedPrev);
-					}
-				} catch (err) {
-					console.error("Erro ao deletar imagem anterior:", err);
-				}
-			}
-		}
+    if (shirt.imageURL) {
+      const previousImagePath = shirt.imageURL;
+      if (previousImagePath) {
+        try {
+          const resolvedPrev = path.resolve(previousImagePath);
+          if (resolvedPrev.startsWith(uploadDir) && fs.existsSync(resolvedPrev)) {
+            fs.unlinkSync(resolvedPrev);
+          }
+        } catch (err) {
+          console.error("Erro ao deletar imagem anterior:", err);
+        }
+      }
+    }
 
-		res.json(shirt);
-	} catch (error) {
-		console.error("Erro ao deletar camisa:", error);
-		res.status(500).json({ error: "Erro ao deletar camisa" });
-	}
+    res.json(shirt);
+  } catch (error) {
+    console.error("Erro ao deletar camisa:", error);
+    res.status(500).json({ error: "Erro ao deletar camisa" });
+  }
 });
 
 export default ShirtController;

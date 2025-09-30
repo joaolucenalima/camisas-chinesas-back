@@ -30,8 +30,8 @@ const corsOptions = {
 app.use(express.json());
 app.use(cors(corsOptions));
 
-app.use("/person", PersonController);
-app.use("/shirt", ShirtController);
+app.use("/api/person", PersonController);
+app.use("/api/shirt", ShirtController);
 
 /**
  * @swagger
@@ -86,7 +86,7 @@ app.use("/shirt", ShirtController);
  *                   type: string
  *                   example: Erro ao acessar arquivo
  */
-app.get("/getImage/:image", (req, res) => {
+app.get("/api/getImage/:image", (req, res) => {
 	const imageUrl = req.params.image;
 
 	const filePath = path.join(process.cwd(), networkPath, imageUrl);
