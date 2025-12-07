@@ -102,6 +102,53 @@ PersonController.get("/", async (req, res) => {
 /**
  * @swagger
  * /person/{id}:
+ *   get:
+ *     summary: Retorna uma pessoa pelo ID
+ *     tags:
+ *       - Pessoa
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID da pessoa
+ *     responses:
+ *       200:
+ *         description: Pessoa obtida com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Person'
+ *       500:
+ *         description: Erro ao buscar pessoa
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Erro ao buscar pessoa
+ */
+PersonController.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const person = await prisma.person.findUnique({
+      where: { id },
+    });
+
+    res.json(person);
+  } catch (error) {
+    console.error("Erro ao buscar pessoa:", error);
+    res.status(500).json({ error: "Erro ao buscar pessoa" });
+  }
+});
+
+/**
+ * @swagger
+ * /person/{id}:
  *   put:
  *     summary: Atualiza uma pessoa pelo ID
  *     tags:
