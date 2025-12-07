@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../../prisma/connection.js";
+import { broadcast } from "../websocket.js";
 
 const PersonController = Router();
 
@@ -55,6 +56,7 @@ PersonController.post("/", async (req, res) => {
       data: { name },
     });
 
+    broadcast("person-modification");
     res.status(201).json(person);
   } catch (error) {
     console.error("Erro ao criar pessoa:", error);
@@ -199,6 +201,7 @@ PersonController.put("/:id", async (req, res) => {
       data: { name },
     });
 
+    broadcast("person-modification");
     res.json(person);
   } catch (error) {
     console.error("Erro ao atualizar pessoa:", error);
@@ -246,6 +249,7 @@ PersonController.delete("/:id", async (req, res) => {
       where: { id },
     });
 
+    broadcast("person-modification");
     res.json(person);
   } catch (error) {
     console.error("Erro ao deletar pessoa:", error);

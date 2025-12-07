@@ -5,6 +5,7 @@ import multer from "multer";
 import path, { extname } from "path";
 import { prisma } from "../../prisma/connection.js";
 import { validatedEnv } from "../utils/env.js";
+import { broadcast } from "../websocket.js";
 
 const ShirtController = Router();
 
@@ -151,6 +152,8 @@ ShirtController.post("/", upload.single("image"), async (req, res) => {
         size,
       },
     });
+
+    broadcast("shirt-modification");
 
     return res.status(201).json(shirt);
   } catch (error) {
@@ -434,6 +437,8 @@ ShirtController.put("/:id", upload.single("image"), async (req, res) => {
       data,
     });
 
+    broadcast("shirt-modification");
+
     res.json(shirt);
   } catch (error) {
     console.error("Erro ao atualizar camisa:", error);
@@ -496,6 +501,8 @@ ShirtController.delete("/:id", async (req, res) => {
         }
       }
     }
+
+    broadcast("shirt-modification");
 
     res.json(shirt);
   } catch (error) {

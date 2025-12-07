@@ -3,11 +3,11 @@ import express from "express";
 import { createServer } from "http";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
-import { WebSocketServer } from "ws";
 import ImageController from "./controllers/image.js";
 import PersonController from "./controllers/person.js";
 import ShirtController from "./controllers/shirt.js";
 import { validatedEnv } from "./utils/env.js";
+import { setupWebSocket } from "./websocket.js";
 
 const port = validatedEnv.PORT;
 
@@ -46,22 +46,8 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const expressServer = createServer(app);
-const wss = new WebSocketServer({ server: expressServer });
+setupWebSocket(expressServer);
 
-wss.on("connection", function connection(ws) {
-  console.log("New client connected");
-
-  ws.on("message", function message(data) {
-    const messageText = data.toString();
-    console.log("Received:", messageText);
-    ws.send(`Echo: ${messageText}`);
-  });
-
-  ws.on("close", function close() {
-    console.log("Client disconnected");
-  });
-});
-
-app.listen(port, () => {
+expressServer.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
