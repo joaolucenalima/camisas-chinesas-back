@@ -4,10 +4,11 @@ import fs from "fs";
 import multer from "multer";
 import path, { extname } from "path";
 import { prisma } from "../../prisma/connection.js";
+import { validatedEnv } from "../utils/env.js";
 
 const ShirtController = Router();
 
-const networkPath = process.env.NETWORK_PATH;
+const networkPath = validatedEnv.NETWORK_PATH;
 
 if (!networkPath) {
   console.error("Variável de ambiente NETWORK_PATH não encontrada");
